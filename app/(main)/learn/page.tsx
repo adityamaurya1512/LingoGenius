@@ -2,11 +2,15 @@
  import {FeedWrapper} from "@/components/feed-wrapper"
  import {Header} from "./header"
 import { Userprogress } from "@/components/user-progress"
-import { getUserProgress } from "@/db/queries"
+import { getUserProgress,getUnits } from "@/db/queries"
+import { redirect } from "next/navigation"
+import Loading from "./loading"
+import {Unit} from "./unit"
  const LearnPage=async ()=>{
-  const userProgressData=getUserProgress()
-  const [userProgress] = await Promise.all([
-    userProgressData]
+  const userProgressData=getUserProgress();
+  const unitsData=getUnits()
+  const [userProgress,units] = await Promise.all([
+    userProgressData,unitsData]
   )
    if(!userProgress || !userProgress.activeCourse)
    {
@@ -15,10 +19,23 @@ import { getUserProgress } from "@/db/queries"
     return (
         <div className="flex flex-row-reverse gap-[48px] px-6">
           <StickyWrapper>
-           <Userprogress activeCourse={{title:"Spanish",imageSrc:"/es.svg"}} hearts={5} points={100} hasActiveSubscription={false}/>
+           <Userprogress activeCourse={userProgress.activeCourse} hearts={userProgress.hearts} points={userProgress.points} hasActiveSubscription={false}/>
           </StickyWrapper>
           <FeedWrapper>
-           <Header title="Spanish"/>
+           <Header title={userProgress.activeCourse.title}/>
+           {units?.map((unit)=>(
+            <div key={unit.id} className="mb-10">
+             <Unit id={unit.id}
+             order={unit.order}
+             description={unit.description}
+             title={unit.title}
+             lessons={unit.lessons}
+             activeLesson={undefined}
+             activeLessonPercentage={0}
+
+             />
+            </div>
+           ))}
           </FeedWrapper>
         </div>
     )

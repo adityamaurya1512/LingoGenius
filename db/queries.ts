@@ -2,7 +2,7 @@ import {cache} from 'react'
 import db from "@/db/drizzle"
 import { auth } from '@clerk/nextjs/server';
 import {eq} from "drizzle-orm"
-import { userProgress } from './schema';
+import { userProgress,courses ,units, challengeProgress} from './schema';
 export const getCourses=cache(async()=>{
     const data=await db.query.courses.findMany()
 
@@ -22,4 +22,89 @@ export const getUserProgress=cache(async()=>{
         }
     })
     return data
+})
+
+export const getCourseById=cache(async(courseId:number)=>{
+    const data=await db.query.courses.findFirst({
+        where:eq(courses.id,courseId)
+    })
+    return data
+})
+
+export const getUnits=cache(async()=>{
+
+    const {userId}=await auth()
+    const userProgress=await getUserProgress();
+    if(!userId || !userProgress?.activeCourseId)
+    {
+        return null;
+    }
+    const data= await db.query.units.findMany({
+        where:eq(units.courseId, userProgress.activeCourseId),
+        with:{
+            lessons:{
+                with:{
+                    challenges:{
+                        with:{
+                            challengeProgress:{
+                                where:eq(challengeProgress.userId,userId),
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    })
+    const normalizedData= data.map((unit)=>{
+        const lessonswithCompletedStatus=unit.lessons.map((lesson)=>{
+            const allCompletedChallenges= lesson.challenges.every((challenge)=>{
+                return challenge.challengeProgress && challenge.challengeProgress.length>0 && 
+                challenge.challengeProgress.every((progress)=>progress.completed)
+            })
+            return {...lesson,completed:allCompletedChallenges}
+        })
+        return {...unit,lessons:lessonswithCompletedStatus}
+    })
+  return normalizedData
+})
+
+export const getCourseProgress=cache(async()=>{
+    const {userId}=auth();
+    const userProgress=await getUserProgress();
+    if(!userId || !userProgress?.activeCourseId)
+    {
+        return null;
+    }
+  const unitsInActiveCourse=await db.query.units.findMany({
+    orderBy:(units,{asc})=>[asc(units.order)],
+    where:eq(units.courseId,userProgress.activeCourseId),
+    with:{
+        lessons:{
+            orderBy:(lessons,{asc})=>[asc(lessons.order)],
+            with:{
+                unit:true,
+                challenges:{
+                    with:{
+                        challengeProgress:{
+                            where:eq(challengeProgress.userId,userId),
+                        }
+                    }
+                }
+            }
+        }
+    }
+  });
+
+       const firstUncompletedLesson=unitsInActiveCourse.flatMap((unit)=>unit.lessons) 
+       .find((lesson)=>{
+        return lesson.challenges.some((challenge)=>{
+            return !challenge.challengeProgress || challenge.challengeProgress.length===0;
+        })
+       })
+       return{
+        activeLesson:firstUncompletedLesson,
+        activeLessonId:firstUncompletedLesson?.id,
+       };
+
 })
