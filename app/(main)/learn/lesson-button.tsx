@@ -14,6 +14,7 @@ type Props={
     percentage:number
 }
 export const LessonButton=({id,index,totalCount,locked,current,percentage}:Props)=>{
+   
     const cycleLength=8;
     const cycleIndex=index%cycleLength;
     let indentationLevel;
@@ -34,10 +35,10 @@ export const LessonButton=({id,index,totalCount,locked,current,percentage}:Props
             indentationLevel=cycleIndex-8
         }
     const rightPosition=indentationLevel * 40;
-    const isFirst=index==0;
-    const isLast=index===totalCount;
+    const isFirst= index===0;
+    const isLast= index===totalCount;
     const isCompleted=!current && !locked;
-    const Icon=isCompleted? Check:isLast?Crown:Star;
+    const Icon=isCompleted? Check:(isLast?Crown:Star);
     const href=isCompleted? `/lesson/${id}` : "/lesson";
 return(
     <Link href={href} aria-disabled={locked} style={{pointerEvents:locked ? "none" :"auto"}}>
