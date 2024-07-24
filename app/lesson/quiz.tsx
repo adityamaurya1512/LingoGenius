@@ -1,5 +1,5 @@
 "use client"
-import { challengeOptions, challenges, lessons } from "@/db/schema";
+import { challengeOptions, challenges, lessons, userSubscription } from "@/db/schema";
 import { useState,useTransition } from "react";
 import { Header } from "./header";
 import { QuestionBubble } from "./question-bubble";
@@ -10,8 +10,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation"
 import { upsertChallengeProgress } from "@/actions/challenge-progress";
 import { reduceHearts } from "@/actions/user-progress";
-import { useAudio } from "react-use";
+import { useAudio ,useMount} from "react-use";
 import { ResultCard } from "./result-card";
+import { useHeartModal } from "@/store/use-heart-modal";
+import { usePracticeModal } from "@/store/use-practice-modal";
 type Props={
        initialLessonId:number;
         initialHearts:number;
@@ -20,18 +22,31 @@ type Props={
             completed:boolean;
             challengeOptions:typeof challengeOptions.$inferSelect[];
         })[],
-     userSubscription:any
+     userSubscription:typeof userSubscription.$inferSelect & {
+        isActive:boolean;
+     } | null
        
 }
 
 export const Quiz=({initialLessonId,initialHearts,initialPercentage,initialLessonChallenges,userSubscription}:Props)=>{
+    const {open:openHeartsModal}=useHeartModal()
+    const {open:openPracticesModal}=usePracticeModal()
+     useMount(()=>{
+        if(initialPercentage===100)
+        {
+             openPracticesModal()
+        }
+     })
+
     const [correctAudio,_c,correctControls] = useAudio({src : "/correct.wav"})
     const [inCorrectAudio,_i,inCorrectControls] = useAudio({src : "/incorrect.wav"})
     const [pending ,startTransition] =useTransition()
     const [hearts,setHearts] =useState( initialHearts);
     const router=useRouter()
     const [lessonId]=useState(initialLessonId)
-    const [percentage,setPercentage]=useState(initialPercentage)
+    const [percentage,setPercentage]=useState(()=>{
+        return initialPercentage === 100 ? 0:initialPercentage
+    })
     const [challenges]=useState(initialLessonChallenges)
     const [status,setStatus]=useState<"correct" | "wrong" | "none">("none")
     const [activeIndex,setActiveIndex]=useState(()=>{
@@ -75,7 +90,7 @@ export const Quiz=({initialLessonId,initialHearts,initialPercentage,initialLesso
                 upsertChallengeProgress(challenge.id).then((response)=>{
                     if( response?.error==="hearts")
                     {
-                        console.log("Missing hearts")
+                        openHeartsModal();
                         return;
                     }
                     correctControls.play()
@@ -94,7 +109,7 @@ export const Quiz=({initialLessonId,initialHearts,initialPercentage,initialLesso
             reduceHearts(challenge.id).then((response) =>{
              if(response?.error==="hearts")
              {
-                console.error("missing hearts")
+                openHeartsModal()
                 return;
              }
              inCorrectControls.play()

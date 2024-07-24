@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server"
-import { getUserProgress } from "@/db/queries"
+import { getUserProgress, getUserSubscription } from "@/db/queries"
 
 import db from "@/db/drizzle";
 import { challenges,challengeProgress,userProgress } from "@/db/schema";
@@ -16,7 +16,7 @@ export const upsertChallengeProgress=async (challengeId:number)=>{
     }
    const currentUserProgress =await getUserProgress();
 
-   // todo
+    const userSubscription=await getUserSubscription()
 
    if(!currentUserProgress)
    {
@@ -40,7 +40,8 @@ export const upsertChallengeProgress=async (challengeId:number)=>{
    })
 
    const isPractice=!!existingChallengeProgress;
-   if(currentUserProgress.hearts === 0 && !isPractice)
+
+   if(currentUserProgress.hearts === 0 && !isPractice && !userSubscription?.isActive)
    {
     return {error: "Hearts"}
    }

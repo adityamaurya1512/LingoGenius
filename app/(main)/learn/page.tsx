@@ -6,7 +6,8 @@ import {
    getUserProgress,
    getUnits,
    getCourseProgress ,
-   getLessonPercentage} from "@/db/queries"
+   getLessonPercentage,
+   getUserSubscription} from "@/db/queries"
 import { redirect } from "next/navigation"
 import Loading from "./loading"
 import {Unit} from "./unit"
@@ -15,11 +16,12 @@ import {Unit} from "./unit"
   const courseProgressData=getCourseProgress();
   const lessonPercentageData=getLessonPercentage()
   const unitsData=getUnits()
-  const [userProgress,units,courseProgress,lessonPercentage] = await Promise.all([
+  const userSubscriptionData= getUserSubscription()
+  const [userProgress,units,courseProgress,lessonPercentage,userSubscription] = await Promise.all([
     userProgressData,
     unitsData,
     courseProgressData,
-    lessonPercentageData]
+    lessonPercentageData,userSubscriptionData]
   )
    console.log(lessonPercentage,'hdddjddh')
    if(!userProgress || !userProgress.activeCourse)
@@ -33,7 +35,7 @@ import {Unit} from "./unit"
     return (
         <div className="flex flex-row-reverse gap-[48px] px-6">
           <StickyWrapper>
-           <Userprogress activeCourse={userProgress.activeCourse} hearts={userProgress.hearts} points={userProgress.points} hasActiveSubscription={false}/>
+           <Userprogress activeCourse={userProgress.activeCourse} hearts={userProgress.hearts} points={userProgress.points} hasActiveSubscription={!!userSubscription?.isActive}/>
           </StickyWrapper>
           <FeedWrapper>
            <Header title={userProgress.activeCourse.title}/>

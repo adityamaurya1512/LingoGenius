@@ -20,7 +20,7 @@ export const Header=({hearts,hasActiveSubscription,percentage}:Props)=>{
             <Progress value={percentage} />
             <div className="text-rose-500 flex items-center font-bold">
               <Image src="/heart.svg" height={28} width={28} alt="Heart" className="mr-2"/>
-              {hasActiveSubscription ? <InfinityIcon className="h-6 w-6 stroke-[3]"/> : hearts}
+              {hasActiveSubscription ? <InfinityIcon className="h-6 w-6 stroke-[3] shrink-0"/> : hearts}
             </div>
         </header>
      )
