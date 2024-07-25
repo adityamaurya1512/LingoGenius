@@ -10,7 +10,7 @@ type Props={
     activeCourseId?:typeof userProgress.$inferSelect.activeCourseId;
 }
 export const List=({courses,activeCourseId}:Props)=>{
- 
+     console.log(courses,'!!!!!')
      const router=useRouter();
      const [pending ,startTransition]=useTransition()
      const onClick=(id:number)=>{
@@ -38,7 +38,7 @@ export const List=({courses,activeCourseId}:Props)=>{
         />
 
         
-    ))}
+    ))  }
     </div>
    )
 }
